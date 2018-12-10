@@ -1,4 +1,4 @@
-Package: com.example.profile
+Package: biz.lcdservices.orgautocomplete
 Copyright (C) 2018, Zoyee <karun.anju11@gmail.com>
 Licensed under the GNU Affero Public License 3.0 (below).
 

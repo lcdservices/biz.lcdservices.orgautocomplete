@@ -1,4 +1,4 @@
-# com.example.profile
+# biz.lcdservices.orgautocomplete
 
 ![Screenshot](/images/screenshot.png)
 
@@ -22,7 +22,7 @@ install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
 cd <extension-dir>
-cv dl com.example.profile@https://github.com/FIXME/com.example.profile/archive/master.zip
+cv dl biz.lcdservices.orgautocomplete@https://github.com/FIXME/biz.lcdservices.orgautocomplete/archive/master.zip
 ```
 
 ## Installation (CLI, Git)
@@ -31,8 +31,8 @@ Sysadmins and developers may clone the [Git](https://en.wikipedia.org/wiki/Git) 
 install it with the command-line tool [cv](https://github.com/civicrm/cv).
 
 ```bash
-git clone https://github.com/FIXME/com.example.profile.git
-cv en profile
+git clone https://github.com/FIXME/biz.lcdservices.orgautocomplete.git
+cv en orgautocomplete
 ```
 
 ## Usage

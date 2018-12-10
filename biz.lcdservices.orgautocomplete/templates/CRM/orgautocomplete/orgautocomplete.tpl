@@ -1,7 +1,7 @@
-{* FILE: Profile/templates/CRM/Profile/Profile.tpl to add custom field for custom data set fields *}
+{* FILE: biz.lcdservices.orgautocomplete/templates/CRM/orgautocomplete/orgautocomplete.tpl to add custom field for custom data set fields *}
 
 
-<table id="profile-custom-fields" class="form-layout">
+<table id="orgautocomplete-custom-fields" class="form-layout">
   <tbody>
 
  <tr id="Add_Organization-tr" style="float: left;">
@@ -14,7 +14,7 @@
 </table>
 
 <script type="text/javascript">
-  cj('#profile-custom-fields').insertAfter('#employer_id');
+  cj('#orgautocomplete-custom-fields').insertAfter('#employer_id');
 </script>
 
 

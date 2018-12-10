@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<menu>
-  <item>
-    <path>civicrm/Profile</path>
-    <page_callback>CRM_Profile_Form_Profile</page_callback>
-    <title>Profile</title>
-    <access_arguments>access CiviCRM</access_arguments>
-  </item>
-</menu>
