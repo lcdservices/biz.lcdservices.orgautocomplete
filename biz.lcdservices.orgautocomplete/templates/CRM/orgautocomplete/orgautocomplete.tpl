@@ -11,7 +11,7 @@
      <tr id="Add_Organization-tr" style="float: left;" style="
         margin-left: 20px;
     ">
-    <td   class="html-adjust"style="display: inline-block;width: 211px;">{$form.organization_name_advanced.html}</td>
+   
     <td class="html-adjust">{$form.organization_name.html}</td>
     </tr>
       
@@ -24,7 +24,9 @@
 
 
 <script type="text/javascript">
-  cj('#orgautocomplete-custom-fields').insertAfter('#email-Primary');
+  cj('#orgautocomplete-custom-fields').insertAfter('#current_employer');
+  
+  
 </script>
 
 

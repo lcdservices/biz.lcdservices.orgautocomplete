@@ -138,28 +138,50 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
 
 
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-    
-
+  
 if($formName == 'CRM_Event_Form_Registration_Register') {
+  
+$address=isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :''; 
 
-    $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
-    $form->addEntityRef('organization_name_advanced', ts('Select Organization'), array(
-    'api' => array(
-    'params' => array('contact_type' => 'Organization'),
-    ),
-    ));
-    CRM_Core_Region::instance('page-body')->add(array(
-    'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
-    ));
+if(!empty($address)){
+
+CRM_Core_Resources::singleton()->addScript('
+if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
+}else {localStorage.removeItem("reload");}' );
+
+
+   
+
+$form->_elements[$address]->_type='entityref';
+$form->_elements[$address]->_attributes['type']='entityref';
+$form->_elements[$address]->_attributes['placeholder']='Organization Name';
+$form->_elements[$address]->_attributes['data-api-params']=json_encode(array ('params' =>array ('contact_type' => 'Organization')));
+$form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
     
-    $form->add(
-    'link', 
-    'Add_Organization', 
-    ' ', 
-    '#','','Add  New Organization',
-    '#'
-    );
-    CRM_Core_Resources::singleton()->addScriptFile('biz.lcdservices.orgautocomplete', 'custom.js'); 
+
+CRM_Core_Region::instance('page-body')->add(array(
+'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
+));
+
+$form->add(
+'link', 
+'Add_Organization', 
+' ', 
+'#','','Add  New Organization',
+'#'
+);
+CRM_Core_Resources::singleton()->addScriptFile('biz.lcdservices.orgautocomplete', 'custom.js'); 
+
+
+
+$result = civicrm_api3('Contact', 'create', [
+'contact_type' => "Individual",
+'id' => CRM_Core_Session::singleton()->getLoggedInContactID(),
+'employer_id' => "",
+]);
+
+}
+
 }
 
 
@@ -197,6 +219,10 @@ if($formName == 'CRM_Contact_Form_Contact') {
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
 
    if ($formName == 'CRM_Event_Form_Registration_Register' ) {
+
+  $address=isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :''; 
+
+  if(!empty($address)){
        
     $contact_id=CRM_Core_Session::singleton()->getLoggedInContactID();
     $address=isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
@@ -249,10 +275,12 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
 
 
     }else{
-    drupal_set_message("Sorry This organization is already Registred with us,Please Select From The   Organization Option",'error');
+   // drupal_set_message("Sorry This organization is already Registred with us,Please Select From The   Organization Option",'error');
     }
 
  }
+ 
+  }
 
 }
 

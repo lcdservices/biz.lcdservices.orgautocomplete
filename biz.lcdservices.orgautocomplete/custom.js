@@ -4,9 +4,9 @@
 
 CRM.$(function($) {
 
-jQuery("#_qf_Profile_submit-top").css('display','none');
+//jQuery("#_qf_Profile_submit-top").css('display','none');
 
-
+jQuery('#organization_name').width(220);
 
   $("#Add_Organization").click(function(){
   var data=$(this).text();	
@@ -15,8 +15,7 @@ jQuery("#_qf_Profile_submit-top").css('display','none');
 
 	if(data=="Add New Organization"){
 	
-
-	$('#s2id_organization_name_advanced').hide();  
+	$('#s2id_current_employer').hide();  
 
 	jQuery('.select2-choice').addClass('select2-default');
 
@@ -37,7 +36,7 @@ jQuery("#_qf_Profile_submit-top").css('display','none');
 	$('#organization_name').hide();  
 	$('label[for="organization_name"]').hide();
 
-	$('#s2id_organization_name_advanced').show();  
+	$('#s2id_current_employer').show();  
 	$('label[for="employer_id"]').show();	
 
 
@@ -49,7 +48,7 @@ jQuery("#_qf_Profile_submit-top").css('display','none');
 	$('#organization_name').hide();  
 	$('label[for="organization_name"]').hide();
 
-	$('#s2id_organization_name_advanced').show();  
+	$('#s2id_current_employer').show();  
 	$('label[for="employer_id"]').show();	
 
 
