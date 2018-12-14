@@ -134,272 +134,108 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
   _orgautocomplete_civix_civicrm_entityTypes($entityTypes);
 }
 
-
-
-
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-  
-if($formName == 'CRM_Event_Form_Registration_Register') {
-  
-$address=isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :''; 
+  if($formName == 'CRM_Event_Form_Registration_Register') {
+    $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+    if(!empty($address)){
+      CRM_Core_Resources::singleton()->addScript('
+        if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
+        }else {localStorage.removeItem("reload");}' );
 
-if(!empty($address)){
+      $form->_elements[$address]->_type='entityref';
+      $form->_elements[$address]->_attributes['type']='entityref';
+      $form->_elements[$address]->_attributes['placeholder']='Organization Name';
+      $form->_elements[$address]->_attributes['data-api-params']=json_encode(array ('params' =>array ('contact_type' => 'Organization')));
+      $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
 
-CRM_Core_Resources::singleton()->addScript('
-if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
-}else {localStorage.removeItem("reload");}' );
+      CRM_Core_Region::instance('page-body')->add(array(
+        'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
+      ));
 
+      $form->add(
+        'link',
+        'Add_Organization',
+        ' ',
+        '#','','Add New Organization',
+        '#'
+      );
+      CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/custom.js');
 
-   
-
-$form->_elements[$address]->_type='entityref';
-$form->_elements[$address]->_attributes['type']='entityref';
-$form->_elements[$address]->_attributes['placeholder']='Organization Name';
-$form->_elements[$address]->_attributes['data-api-params']=json_encode(array ('params' =>array ('contact_type' => 'Organization')));
-$form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
-    
-
-CRM_Core_Region::instance('page-body')->add(array(
-'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
-));
-
-$form->add(
-'link', 
-'Add_Organization', 
-' ', 
-'#','','Add  New Organization',
-'#'
-);
-CRM_Core_Resources::singleton()->addScriptFile('biz.lcdservices.orgautocomplete', 'custom.js'); 
-
-
-
-$result = civicrm_api3('Contact', 'create', [
-'contact_type' => "Individual",
-'id' => CRM_Core_Session::singleton()->getLoggedInContactID(),
-'employer_id' => "",
-]);
-
+      $result = civicrm_api3('Contact', 'create', [
+        'contact_type' => "Individual",
+        'id' => CRM_Core_Session::singleton()->getLoggedInContactID(),
+        'employer_id' => "",
+      ]);
+    }
+  }
 }
-
-}
-
-
-if($formName == 'CRM_Contact_Form_Contact') {
-    $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
-    CRM_Core_Region::instance('page-body')->add(array(
-    'template' => "CRM/orgautocomplete/orgautocomplete_contact.tpl"
-    ));
-    $form->add(
-    'Link', 
-    'Add_Organization', 
-    ' ', 
-    '#','','Add  New Organization',
-    '#'
-    );
-    CRM_Core_Resources::singleton()->addScriptFile('biz.lcdservices.orgautocomplete', 'custom_contact.js'); 
-}
-
-
-
-  
-}
-
-
-
-
-
-
-
-
-
-
-
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
+  if ($formName == 'CRM_Event_Form_Registration_Register' ) {
+    $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
 
-   if ($formName == 'CRM_Event_Form_Registration_Register' ) {
+    if(!empty($address)){
+      $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
+      $address = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
+      $address_advanced = isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
+      $organization_name = isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes['value']:'';
+      $organization_name_advanced = isset($form->_elements[$address_advanced]->_attributes['value']) ? $form->_elements[$address_advanced]->_attributes['value']:'';
 
-  $address=isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :''; 
-
-  if(!empty($address)){
-       
-    $contact_id=CRM_Core_Session::singleton()->getLoggedInContactID();
-    $address=isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
-    $address_advanced=isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
-    $organization_name=isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes['value']:'';
-    $organization_name_advanced=isset($form->_elements[$address_advanced]->_attributes['value']) ? $form->_elements[$address_advanced]->_attributes['value']:'';
-    
-    if(isset($organization_name_advanced) && !empty($organization_name_advanced)){
-        
-        
+      if(isset($organization_name_advanced) && !empty($organization_name_advanced)){
         $result = civicrm_api3('Contact', 'create', array(
         'id' => $contact_id,
         'employer_id' =>$organization_name_advanced,
-        )); 
-        
-        
-    }else{
-        
-        if(!empty($organization_name)){ 
-        $result = civicrm_api3('Contact', 'get', array(
-        'sequential' => 1,
-        'contact_type' => "Organization",
-        'organization_name' => $organization_name,
         ));
-        
-        $count=count($result['values']);
-        if($count==0){
-        
-        $result = civicrm_api3('Contact', 'create', array(
-        'contact_type' => "Organization",
-        'organization_name' =>$organization_name,
-        ));
-        
-        
-        
-        $result = civicrm_api3('Contact', 'get', array(
-        'sequential' => 1,
-        'contact_type' => "Organization",
-        'organization_name' => $organization_name,
-        ));
-        
-        $result = civicrm_api3('Contact', 'create', array(
-        'id' => $contact_id,
-        'employer_id' => $result['values'][0]['contact_id'],
-        )); 
-        
+      }
+      else {
+        if(!empty($organization_name)) {
+          $result = civicrm_api3('Contact', 'get', [
+            'sequential' => 1,
+            'contact_type' => "Organization",
+            'organization_name' => $organization_name,
+          ]);
+
+          $count = count($result['values']);
+          if ($count == 0) {
+            $result = civicrm_api3('Contact', 'create', [
+              'contact_type' => "Organization",
+              'organization_name' => $organization_name,
+            ]);
+
+            $result = civicrm_api3('Contact', 'get', [
+              'sequential' => 1,
+              'contact_type' => "Organization",
+              'organization_name' => $organization_name,
+            ]);
+
+            $result = civicrm_api3('Contact', 'create', [
+              'id' => $contact_id,
+              'employer_id' => $result['values'][0]['contact_id'],
+            ]);
+          }
+        }
+      }
     }
-    
-
-
-
-    }else{
-   // drupal_set_message("Sorry This organization is already Registred with us,Please Select From The   Organization Option",'error');
-    }
-
- }
- 
   }
-
 }
-
-
-
-
-
-   if ($formName == 'CRM_Contact_Form_Contact') {
-
-    $address=isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
-    $organization_name=isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes['value']:'';
-    if(!empty($organization_name)){ 
-    $result = civicrm_api3('Contact', 'get', array(
-    'sequential' => 1,
-    'contact_type' => "Organization",
-    'organization_name' => $organization_name,
-    ));
-    $count=count($result['values']);
-
-    if($count==0){
-
-    $result = civicrm_api3('Contact', 'create', array(
-    'contact_type' => "Organization",
-    'organization_name' =>$organization_name,
-    ));
-
-    $result = civicrm_api3('Contact', 'get', array(
-    'sequential' => 1,
-    'contact_type' => "Organization",
-    'organization_name' => $organization_name,
-    ));
-
-    $result = civicrm_api3('Contact', 'create', array(
-    'id' => $form->_contactId,
-    'employer_id' => $result['values'][0]['contact_id'],
-    )); 
-
-
-    }else{
-    drupal_set_message("Sorry This organization is already Registred with us,Please Select From The   Organization Option",'error');
-    }
-
- }
-
-}
-
-}
-
-
 
 function orgautocomplete_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-
-
-
-
- if ($formName == 'CRM_Contact_Form_Contact') {
-   
-   $address=$form->_elementIndex['organization_name'];
-$organization_name=isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes 
+  if ($formName == 'CRM_Contact_Form_Contact') {
+    $address = $form->_elementIndex['organization_name'];
+    $organization_name = isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes
 ['value']:'';
   
     if(!empty($organization_name)){ 
-        $result = civicrm_api3('Contact', 'get', array(
-  'sequential' => 1,
-  'contact_type' => "Organization",
-  'organization_name' => $organization_name,
-  ));
-        $count=count($result['values']);
+      $result = civicrm_api3('Contact', 'get', array(
+        'sequential' => 1,
+        'contact_type' => "Organization",
+        'organization_name' => $organization_name,
+      ));
+      $count = count($result['values']);
   
-  if($count>0){ $errors['error'] = ts('Sorry This organization is already Registred with us,Please Select    From The Organization Option');
-  drupal_set_message($errors['error'],'error'); }
+      if ($count>0) {
+        $errors['organization_name'] = ts('This organization already exists in the system. Please select it from the list.');
+      }
+    }
   }
-  
-  }
-  return;
-
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-// --- Functions below this ship commented out. Uncomment as required. ---
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function orgautocomplete_civicrm_preProcess($formName, &$form) {
-
-} // */
-
-/**
- * Implements hook_civicrm_navigationMenu().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function orgautocomplete_civicrm_navigationMenu(&$menu) {
-  _orgautocomplete_civix_insert_navigation_menu($menu, 'Mailings', array(
-    'label' => E::ts('New subliminal message'),
-    'name' => 'mailing_subliminal_message',
-    'url' => 'civicrm/mailing/subliminal',
-    'permission' => 'access CiviMail',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _orgautocomplete_civix_navigationMenu($menu);
-} // */
-
-
-
-
-
