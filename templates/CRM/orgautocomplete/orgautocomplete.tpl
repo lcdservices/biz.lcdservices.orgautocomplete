@@ -10,7 +10,3 @@
     <td class="html-adjust">{$form.organization_name.html}</td>
   </tr>
 </table>
-
-<script type="text/javascript">
-  cj('#orgautocomplete-custom-fields').insertAfter('#current_employer');
-</script>

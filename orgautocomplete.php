@@ -135,9 +135,14 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
 }
 
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-  if($formName == 'CRM_Event_Form_Registration_Register') {
+  Civi::log()->debug('', [
+    'formName' => $formName,
+    '_elementIndex' => $form->_elementIndex,
+  ]);
+
+  if ($formName == 'CRM_Event_Form_Registration_Register') {
     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-    if(!empty($address)){
+    if (!empty($address)) {
       CRM_Core_Resources::singleton()->addScript('
         if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
         }else {localStorage.removeItem("reload");}' );
@@ -159,7 +164,7 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
         '#','','Add New Organization',
         '#'
       );
-      CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/custom.js');
+      CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/OrgAutoComplete.js');
 
       $result = civicrm_api3('Contact', 'create', [
         'contact_type' => "Individual",
