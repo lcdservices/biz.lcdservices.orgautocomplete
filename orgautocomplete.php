@@ -161,7 +161,7 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
         'link',
         'Add_Organization',
         ' ',
-        '#','','Add New Organization',
+        'javascript:void(0);','','Add New Organization',
         '#'
       );
       CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/OrgAutoComplete.js');
