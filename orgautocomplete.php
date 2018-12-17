@@ -146,18 +146,18 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
       CRM_Core_Resources::singleton()->addScript('
         if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
         }else {localStorage.removeItem("reload");}' );
-
+      $settings=Civi::settings()->get('Orgautocomplete_restrict_group');
+      if(isset($settings) && !empty($settings) ){$count=$settings;}else{$count=0;}
       $form->_elements[$address]->_type='entityref';
       $form->_elements[$address]->_attributes['type']='entityref';
       $form->_elements[$address]->_attributes['placeholder']='Organization Name';
+      $form->_elements[$address]->_attributes['data-select-params']=json_encode(array('minimumInputLength' => $settings));
       $form->_elements[$address]->_attributes['data-api-params']=json_encode(array ('params' =>array ('contact_type' => 'Organization')));
       $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
-
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
       ));
-
-      $form->add(
+        $form->add(
         'link',
         'Add_Organization',
         ' ',
@@ -173,13 +173,13 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
       ]);
     }
   }
+  
 }
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
   if ($formName == 'CRM_Event_Form_Registration_Register' ) {
     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-
-    if(!empty($address)){
+      if(!empty($address)){
       $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
       $address = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
       $address_advanced = isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
@@ -224,23 +224,4 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
   }
 }
 
-function orgautocomplete_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
-  if ($formName == 'CRM_Contact_Form_Contact') {
-    $address = $form->_elementIndex['organization_name'];
-    $organization_name = isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes
-['value']:'';
-  
-    if(!empty($organization_name)){ 
-      $result = civicrm_api3('Contact', 'get', array(
-        'sequential' => 1,
-        'contact_type' => "Organization",
-        'organization_name' => $organization_name,
-      ));
-      $count = count($result['values']);
-  
-      if ($count>0) {
-        $errors['organization_name'] = ts('This organization already exists in the system. Please select it from the list.');
-      }
-    }
-  }
-}
+
