@@ -1,12 +1,11 @@
 CRM.$(function($) {
-  $('#orgautocomplete-custom-fields').insertAfter('#current_employer');
+  $('#oac-wrapper').insertAfter('#current_employer');
 
-	$('#organization_name').width(220);
   $("#Add_Organization").click(function(){
   	var data=$(this).text();
-		$(this).text($(this).text() == 'Select Organization' ? 'Add New Organization' : 'Select Organization');
+		$(this).text($(this).text() === 'Select Organization' ? 'Add New Organization' : 'Select Organization');
 
-		if (data=="Add New Organization"){
+		if (data === "Add New Organization"){
 			$('#s2id_current_employer').hide();
 			$('.select2-choice').addClass('select2-default');
 			$('.select2-chosen').text('-Select Organization-');
@@ -15,16 +14,15 @@ CRM.$(function($) {
 			$('label[for="organization_name"]').show();
 		}
 
-		if (data=="Select Organization"){
-			$("#organization_name").val('');
-			$('#organization_name').hide();
+		if (data === "Select Organization"){
+			$("#organization_name").val('').hide();
 			$('label[for="organization_name"]').hide();
 			$('#s2id_current_employer').show();
 			$('label[for="employer_id"]').show();
 		}
 	});
 
-	$('#organization_name').hide();  
+  $('#organization_name').width(220).hide();
 	$('label[for="organization_name"]').hide();
 	$('#s2id_current_employer').show();  
 	$('label[for="employer_id"]').show();

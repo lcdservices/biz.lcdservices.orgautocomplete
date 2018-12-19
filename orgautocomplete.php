@@ -135,35 +135,47 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
 }
 
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-Civi::log()->debug('', [
+  /*Civi::log()->debug('', [
     'formName' => $formName,
     '_elementIndex' => $form->_elementIndex,
-  ]);
-if ($formName == 'CRM_Event_Form_Registration_Register') {
-     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-    if (!empty($address)) {
+  ]);*/
+
+  if ($formName == 'CRM_Event_Form_Registration_Register') {
+    $ele = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+
+    if (!empty($ele)) {
       CRM_Core_Resources::singleton()->addScript('
         if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
-        }else {localStorage.removeItem("reload");}' );
-      $settings=Civi::settings()->get('Orgautocomplete_restrict_group');
-      if(isset($settings) && !empty($settings) ){$count=$settings;}else{$count='';}
-      $form->_elements[$address]->_type='entityref';
-      $form->_elements[$address]->_attributes['type']='entityref';
-      $form->_elements[$address]->_attributes['placeholder']='Organization Name';
-      $form->_elements[$address]->_attributes['data-api-params']=json_encode(array ('params' =>array ('contact_type' => 'Organization','group' =>$count)));
+        }else {localStorage.removeItem("reload");}'
+      );
+      $settings = Civi::settings()->get('Orgautocomplete_restrict_group');
+
+      $count='';
+      if(!empty($settings)) {
+        $count = $settings;
+      }
+
+      $form->_elements[$ele]->_type = 'entityref';
+      $form->_elements[$ele]->_attributes['type'] = 'entityref';
+      $form->_elements[$ele]->_attributes['placeholder'] = 'Organization Name';
+      $form->_elements[$ele]->_attributes['data-api-params'] = json_encode(array(
+        'params' => array(
+          'contact_type' => 'Organization',
+          'group' =>$count,
+        )
+      ));
       $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
+      $form->add('link', 'Add_Organization', ' ', 'javascript:void(0);',
+        '', 'Add New Organization', '#'
+      );
+
       CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
       ));
-        $form->add(
-        'link',
-        'Add_Organization',
-        ' ',
-        'javascript:void(0);','','Add New Organization',
-        '#'
-      );
       CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/OrgAutoComplete.js');
-       $result = civicrm_api3('Contact', 'create', [
+      CRM_Core_Resources::singleton()->addStyleFile(E::LONG_NAME, 'css/OrgAutoComplete.css');
+
+      civicrm_api3('Contact', 'create', [
         'contact_type' => "Individual",
         'id' => CRM_Core_Session::singleton()->getLoggedInContactID(),
         'employer_id' => "",
@@ -182,13 +194,13 @@ if ($formName == 'CRM_Event_Form_Registration_Register') {
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
 if ($formName == 'CRM_Event_Form_Registration_Register' ) {
-     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-      if(!empty($address)){
+     $ele = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+      if(!empty($ele)){
       $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
-      $address = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
-      $address_advanced = isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
-      $organization_name = isset($form->_elements[$address]->_attributes['value']) ? $form->_elements[$address]->_attributes['value']:'';
-      $organization_name_advanced = isset($form->_elements[$address_advanced]->_attributes['value']) ? $form->_elements[$address_advanced]->_attributes['value']:'';
+      $ele = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
+      $ele_advanced = isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
+      $organization_name = isset($form->_elements[$ele]->_attributes['value']) ? $form->_elements[$ele]->_attributes['value']:'';
+      $organization_name_advanced = isset($form->_elements[$ele_advanced]->_attributes['value']) ? $form->_elements[$ele_advanced]->_attributes['value']:'';
       if(isset($organization_name_advanced) && !empty($organization_name_advanced)){
         $result = civicrm_api3('Contact', 'create', array(
         'id' => $contact_id,

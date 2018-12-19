@@ -1,15 +1,6 @@
 {* FILE: biz.lcdservices.orgautocomplete/templates/CRM/orgautocomplete/orgautocomplete.tpl to add custom field for custom data set fields *}
 
-<table id="orgautocomplete-custom-fields" class="form-layout">
-  
-  <tr id="Add_Organization-tr" style="float: left;" style="
-        margin-left: 20px;
-    ">
-    <td class="html-adjust">{$form.organization_name.html}</td>
-  </tr>
-
-  <tr>
-    <td class="html-adjust">{$form.Add_Organization.html}</td>
-  </tr>
-
-</table>
+<div id="oac-wrapper" class="form-layout">
+  <div id="oac-org-select">{$form.organization_name.html}</div>
+  <div id="oac-switcher">{$form.Add_Organization.html}</div>
+</div>
