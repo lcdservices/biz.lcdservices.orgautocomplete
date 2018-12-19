@@ -28,5 +28,4 @@ CRM.$(function($) {
 	$('label[for="organization_name"]').hide();
 	$('#s2id_current_employer').show();  
 	$('label[for="employer_id"]').show();
-	$("#Add_Organization").click();
 });
