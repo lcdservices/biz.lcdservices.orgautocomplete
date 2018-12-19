@@ -138,33 +138,31 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
   /*Civi::log()->debug('', [
     'formName' => $formName,
     '_elementIndex' => $form->_elementIndex,
+    '_defaultValues' => $form->_defaultValues,
+    '$_REQUEST' => $_REQUEST,
+    'form' => $form,
   ]);*/
 
   if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $ele = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+    $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
 
     if (!empty($ele)) {
       CRM_Core_Resources::singleton()->addScript('
         if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
         }else {localStorage.removeItem("reload");}'
       );
-      $settings = Civi::settings()->get('Orgautocomplete_restrict_group');
-
-      $count='';
-      if(!empty($settings)) {
-        $count = $settings;
-      }
+      $groupId = Civi::settings()->get('Orgautocomplete_restrict_group');
 
       $form->_elements[$ele]->_type = 'entityref';
       $form->_elements[$ele]->_attributes['type'] = 'entityref';
-      $form->_elements[$ele]->_attributes['placeholder'] = 'Organization Name';
+      $form->_elements[$ele]->_attributes['placeholder'] = 'Organization Name';//TODO pull from label
       $form->_elements[$ele]->_attributes['data-api-params'] = json_encode(array(
         'params' => array(
           'contact_type' => 'Organization',
-          'group' =>$count,
+          'group' => $groupId,
         )
       ));
-      $form->add('text', 'organization_name', ts('Organization Name'), array("placeholder"=>"Organization Name" ));
+      $form->add('text', 'organization_name', ts('Organization Name'));
       $form->add('link', 'Add_Organization', ' ', 'javascript:void(0);',
         '', 'Add New Organization', '#'
       );
@@ -182,29 +180,80 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
       ]);
     }
   }
-  
-    /*  if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
-    $template =& CRM_Core_Smarty::singleton();
-    $all_tpl_vars = $template->get_template_vars('');
-    echo "<pre>"; print_r($all_tpl_vars);die;
 
-    } */
-  
+  //set org name value to the tpl
+  if (in_array($formName, ['CRM_Event_Form_Registration_Confirm', 'CRM_Event_Form_Registration_ThankYou'])) {
+    //if current employer field exists and is an integer, do a lookup to get the org name
+    if (!empty($form->_defaultValues['current_employer']) &&
+      (ctype_digit($form->_defaultValues['current_employer']) || is_int($form->_defaultValues['current_employer'])) &&
+      empty($form->getVar('_params')[0]['organization_name'])
+    ) {
+      $tplVars = $form->get_template_vars();
+      //Civi::log()->debug('BEFORE', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
+
+      try {
+        $orgName = civicrm_api3('contact', 'getvalue', [
+          'id' => $form->_defaultValues['current_employer'],
+          'return' => 'display_name',
+        ]);
+        //Civi::log()->debug('', ['$orgName' => $orgName]);
+
+        if (!empty($orgName)) {
+          //get the label for the field so we can set as key
+          $fieldLabel = $form->_fields['current_employer']['title'];
+          //Civi::log()->debug('', ['$fieldLabel' => $fieldLabel]);
+
+          //cycle through pre/post in tplVars and assign value
+          foreach (['CustomPre', 'CustomPost'] as $profile) {
+            if (!empty($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
+              $tplVars['primaryParticipantProfile'][$profile][$fieldLabel] = $orgName;
+              $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
+            }
+          }
+        }
+      }
+      catch (CRM_API3_Exception $e) {}
+
+      //Civi::log()->debug('AFTER', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
+    }
+    elseif (!empty($form->getVar('_params')[0]['organization_name'])) {
+      $tplVars = $form->get_template_vars();
+      //Civi::log()->debug('BEFORE2', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
+
+      //get the label for the field so we can set as key
+      $fieldLabel = $form->_fields['current_employer']['title'];
+      //Civi::log()->debug('', ['$fieldLabel' => $fieldLabel]);
+
+      //cycle through pre/post in tplVars and assign value
+      foreach (['CustomPre', 'CustomPost'] as $profile) {
+        if (isset($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
+          $tplVars['primaryParticipantProfile'][$profile][$fieldLabel] = $form->getVar('_params')[0]['organization_name'];
+          $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
+        }
+      }
+
+      //Civi::log()->debug('AFTER2', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
+    }
+  }
 }
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
-if ($formName == 'CRM_Event_Form_Registration_Register' ) {
-     $ele = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-      if(!empty($ele)){
+  if ($formName == 'CRM_Event_Form_Registration_Register' ) {
+    $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+    if(!empty($ele)){
       $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
       $ele = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
-      $ele_advanced = isset($form->_elementIndex['organization_name_advanced']) ? $form->_elementIndex['organization_name_advanced'] :'';
-      $organization_name = isset($form->_elements[$ele]->_attributes['value']) ? $form->_elements[$ele]->_attributes['value']:'';
-      $organization_name_advanced = isset($form->_elements[$ele_advanced]->_attributes['value']) ? $form->_elements[$ele_advanced]->_attributes['value']:'';
-      if(isset($organization_name_advanced) && !empty($organization_name_advanced)){
-        $result = civicrm_api3('Contact', 'create', array(
-        'id' => $contact_id,
-        'employer_id' =>$organization_name_advanced,
+      $ele_advanced = isset($form->_elementIndex['organization_name_advanced']) ?
+        $form->_elementIndex['organization_name_advanced'] :'';
+      $organization_name = isset($form->_elements[$ele]->_attributes['value']) ?
+        $form->_elements[$ele]->_attributes['value']:'';
+      $organization_name_advanced = isset($form->_elements[$ele_advanced]->_attributes['value']) ?
+        $form->_elements[$ele_advanced]->_attributes['value']:'';
+
+      if(!empty($organization_name_advanced)){
+        civicrm_api3('Contact', 'create', array(
+          'id' => $contact_id,
+          'employer_id' =>$organization_name_advanced,
         ));
       }
       else {
@@ -237,15 +286,4 @@ if ($formName == 'CRM_Event_Form_Registration_Register' ) {
       }
     }
   }
- }
- 
- function orgautocomplete_civicrm_alterTemplateFile($formName, &$form, $context, &$tplName){
-     if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
-        $template =& CRM_Core_Smarty::singleton();
-        $all_tpl_vars = $template->get_template_vars('current_employer');
-        $template->assign('current_employer', 'test'); 
-     }
-     
 }
-
-
