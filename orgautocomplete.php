@@ -140,7 +140,7 @@ Civi::log()->debug('', [
     '_elementIndex' => $form->_elementIndex,
   ]);
 if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
     if (!empty($address)) {
       CRM_Core_Resources::singleton()->addScript('
         if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
@@ -170,11 +170,19 @@ if ($formName == 'CRM_Event_Form_Registration_Register') {
       ]);
     }
   }
- }
+  
+    /*  if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
+    $template =& CRM_Core_Smarty::singleton();
+    $all_tpl_vars = $template->get_template_vars('');
+    echo "<pre>"; print_r($all_tpl_vars);die;
+
+    } */
+  
+}
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
-  if ($formName == 'CRM_Event_Form_Registration_Register' ) {
-    $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+if ($formName == 'CRM_Event_Form_Registration_Register' ) {
+     $address = isset($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
       if(!empty($address)){
       $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
       $address = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
@@ -217,5 +225,15 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
       }
     }
   }
+ }
+ 
+ function orgautocomplete_civicrm_alterTemplateFile($formName, &$form, $context, &$tplName){
+     if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
+        $template =& CRM_Core_Smarty::singleton();
+        $all_tpl_vars = $template->get_template_vars('current_employer');
+        $template->assign('current_employer', 'test'); 
+     }
+     
 }
+
 
