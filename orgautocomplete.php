@@ -135,65 +135,76 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
 }
 
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-  /*Civi::log()->debug('', [
+  /*Civi::log()->debug('orgautocomplete_civicrm_buildForm', [
     'formName' => $formName,
     '_elementIndex' => $form->_elementIndex,
     '_defaultValues' => $form->_defaultValues,
-    '$_REQUEST' => $_REQUEST,
-    'form' => $form,
+    '_submitValues' => $form->_submitValues,
+    '_params' => $form->getVar('_params'),
+    //'$_REQUEST' => $_REQUEST,
+    //'form' => $form,
   ]);*/
 
   if ($formName == 'CRM_Event_Form_Registration_Register') {
-    $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
+    $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] : '';
 
     if (!empty($ele)) {
-      CRM_Core_Resources::singleton()->addScript('
-        if (!localStorage.getItem("reload")) {localStorage.setItem("reload", "true");location.reload();
-        }else {localStorage.removeItem("reload");}'
-      );
       $groupId = Civi::settings()->get('Orgautocomplete_restrict_group');
 
-      $form->_elements[$ele]->_type = 'entityref';
-      $form->_elements[$ele]->_attributes['type'] = 'entityref';
-      $form->_elements[$ele]->_attributes['placeholder'] = 'Organization Name';//TODO pull from label
-      $form->_elements[$ele]->_attributes['data-api-params'] = json_encode(array(
-        'params' => array(
-          'contact_type' => 'Organization',
-          'group' => $groupId,
-        )
+      $form->addEntityRef('org_select', ts('Organization Name'), array(
+        'entity' => 'contact',
+        'placeholder' => ts('- Select Organization -'),
+        'select' => array('minimumInputLength' => 2),
+        'filters' => [],
+        'api' => array(
+          'params' => array(
+            'contact_type' => 'Organization',
+            'group' => $groupId,
+          ),
+        ),
       ));
-      $form->add('text', 'organization_name', ts('Organization Name'));
-      $form->add('link', 'Add_Organization', ' ', 'javascript:void(0);',
+
+      $form->add('link', 'org_switcher', ' ', 'javascript:void(0);',
         '', 'Add New Organization', '#'
       );
 
       CRM_Core_Region::instance('page-body')->add(array(
-        'template' => "CRM/orgautocomplete/orgautocomplete.tpl"
+        'template' => "CRM/orgautocomplete.tpl"
       ));
+
       CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/OrgAutoComplete.js');
       CRM_Core_Resources::singleton()->addStyleFile(E::LONG_NAME, 'css/OrgAutoComplete.css');
 
-      civicrm_api3('Contact', 'create', [
-        'contact_type' => "Individual",
-        'id' => CRM_Core_Session::singleton()->getLoggedInContactID(),
-        'employer_id' => "",
-      ]);
+      //set default
+      $cid = CRM_Core_Session::singleton()->getLoggedInContactID();
+      if ($cid) {
+        $employerId = _orgautocomplete_getEmployerId($cid);
+
+        if ($employerId) {
+          $form->setDefaults([
+            'org_select' => $employerId,
+          ]);
+        }
+      }
     }
   }
 
   //set org name value to the tpl
   if (in_array($formName, ['CRM_Event_Form_Registration_Confirm', 'CRM_Event_Form_Registration_ThankYou'])) {
-    //if current employer field exists and is an integer, do a lookup to get the org name
-    if (!empty($form->_defaultValues['current_employer']) &&
-      (ctype_digit($form->_defaultValues['current_employer']) || is_int($form->_defaultValues['current_employer'])) &&
-      empty($form->getVar('_params')[0]['organization_name'])
+    $params = $form->getVar('_params');
+    $params = $params[0];
+
+    //if org_select field exists and is an integer, do a lookup to get the org name
+    if (!empty($params['org_select']) &&
+      (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
+      empty($params['current_employer'])
     ) {
       $tplVars = $form->get_template_vars();
       //Civi::log()->debug('BEFORE', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
 
       try {
         $orgName = civicrm_api3('contact', 'getvalue', [
-          'id' => $form->_defaultValues['current_employer'],
+          'id' => $params['org_select'],
           'return' => 'display_name',
         ]);
         //Civi::log()->debug('', ['$orgName' => $orgName]);
@@ -205,7 +216,7 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
 
           //cycle through pre/post in tplVars and assign value
           foreach (['CustomPre', 'CustomPost'] as $profile) {
-            if (!empty($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
+            if (isset($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
               $tplVars['primaryParticipantProfile'][$profile][$fieldLabel] = $orgName;
               $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
             }
@@ -216,74 +227,46 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
 
       //Civi::log()->debug('AFTER', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
     }
-    elseif (!empty($form->getVar('_params')[0]['organization_name'])) {
-      $tplVars = $form->get_template_vars();
-      //Civi::log()->debug('BEFORE2', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
-
-      //get the label for the field so we can set as key
-      $fieldLabel = $form->_fields['current_employer']['title'];
-      //Civi::log()->debug('', ['$fieldLabel' => $fieldLabel]);
-
-      //cycle through pre/post in tplVars and assign value
-      foreach (['CustomPre', 'CustomPost'] as $profile) {
-        if (isset($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
-          $tplVars['primaryParticipantProfile'][$profile][$fieldLabel] = $form->getVar('_params')[0]['organization_name'];
-          $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
-        }
-      }
-
-      //Civi::log()->debug('AFTER2', ['tplVars[primaryParticipantProfile]' => $tplVars['primaryParticipantProfile']]);
-    }
   }
 }
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
-  if ($formName == 'CRM_Event_Form_Registration_Register' ) {
-    $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] :'';
-    if(!empty($ele)){
-      $contact_id = CRM_Core_Session::singleton()->getLoggedInContactID();
-      $ele = isset($form->_elementIndex['organization_name']) ? $form->_elementIndex['organization_name'] :'';
-      $ele_advanced = isset($form->_elementIndex['organization_name_advanced']) ?
-        $form->_elementIndex['organization_name_advanced'] :'';
-      $organization_name = isset($form->_elements[$ele]->_attributes['value']) ?
-        $form->_elements[$ele]->_attributes['value']:'';
-      $organization_name_advanced = isset($form->_elements[$ele_advanced]->_attributes['value']) ?
-        $form->_elements[$ele_advanced]->_attributes['value']:'';
+  /*Civi::log()->debug('orgautocomplete_civicrm_postProcess', [
+    'formName' => $formName,
+    //'_elementIndex' => $form->_elementIndex,
+    //'_defaultValues' => $form->_defaultValues,
+    //'_submitValues' => $form->_submitValues,
+    '_params' => $form->getVar('_params'),
+    //'form' => $form,
+  ]);*/
 
-      if(!empty($organization_name_advanced)){
-        civicrm_api3('Contact', 'create', array(
-          'id' => $contact_id,
-          'employer_id' =>$organization_name_advanced,
-        ));
+  if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
+    $params = $form->getVar('_params');
+
+    if (!empty($params['org_select']) &&
+      (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
+      empty($params['current_employer'])
+    ) {
+      try {
+        //get existing employer_id
+        $previousEmployerId = _orgautocomplete_getEmployerId($params['contact_id']);
+
+        CRM_Contact_BAO_Contact_Utils::createCurrentEmployerRelationship(
+          $params['contact_id'], $params['org_select'], $previousEmployerId);
+        /*civicrm_api3('contact', 'create', [
+          'id' => $params['contact_id'],
+          'employer_id' => $params['org_select'],
+        ]);*/
       }
-      else {
-        if(!empty($organization_name)) {
-          $result = civicrm_api3('Contact', 'get', [
-            'sequential' => 1,
-            'contact_type' => "Organization",
-            'organization_name' => $organization_name,
-          ]);
-
-          $count = count($result['values']);
-          if ($count == 0) {
-            $result = civicrm_api3('Contact', 'create', [
-              'contact_type' => "Organization",
-              'organization_name' => $organization_name,
-            ]);
-
-            $result = civicrm_api3('Contact', 'get', [
-              'sequential' => 1,
-              'contact_type' => "Organization",
-              'organization_name' => $organization_name,
-            ]);
-
-            $result = civicrm_api3('Contact', 'create', [
-              'id' => $contact_id,
-              'employer_id' => $result['values'][0]['contact_id'],
-            ]);
-          }
-        }
+      catch (CiviCRM_API3_Exception $e) {
+        Civi::log()->debug('CRM_Event_Form_Registration_Confirm postProcess', ['$e' => $e]);
       }
     }
   }
+}
+
+function _orgautocomplete_getEmployerId($cid) {
+  $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
+
+  return $employerId;
 }
