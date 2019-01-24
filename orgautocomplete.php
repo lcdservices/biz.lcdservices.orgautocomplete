@@ -237,10 +237,13 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
     //'_defaultValues' => $form->_defaultValues,
     //'_submitValues' => $form->_submitValues,
     '_params' => $form->getVar('_params'),
-    //'form' => $form,
+    'form' => $form,
   ]);*/
 
-  if ($formName == 'CRM_Event_Form_Registration_Confirm' ) {
+  //process on confirmation or register when there is no fee
+  if ($formName == 'CRM_Event_Form_Registration_Confirm' ||
+    ($formName == 'CRM_Event_Form_Registration_Register' && empty($form->_values['event']['is_monetary']))
+  ) {
     $params = $form->getVar('_params');
 
     if (!empty($params['org_select']) &&
