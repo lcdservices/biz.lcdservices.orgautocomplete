@@ -156,10 +156,14 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
         'placeholder' => ts('- Select Organization -'),
         'select' => array('minimumInputLength' => 2),
         'filters' => [],
+        'orgautocomplete' => TRUE,
+        'check_permissions' => FALSE,
         'api' => array(
           'params' => array(
             'contact_type' => 'Organization',
             'group' => $groupId,
+            'check_permissions' => FALSE,
+            'orgautocomplete' => TRUE,
           ),
         ),
       ));
@@ -256,10 +260,6 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
 
         CRM_Contact_BAO_Contact_Utils::createCurrentEmployerRelationship(
           $params['contact_id'], $params['org_select'], $previousEmployerId);
-        /*civicrm_api3('contact', 'create', [
-          'id' => $params['contact_id'],
-          'employer_id' => $params['org_select'],
-        ]);*/
       }
       catch (CiviCRM_API3_Exception $e) {
         Civi::log()->debug('CRM_Event_Form_Registration_Confirm postProcess', ['$e' => $e]);
@@ -267,6 +267,29 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
     }
   }
 }
+
+function orgautocomplete_civicrm_permission_check($permission, &$granted) {
+  /*Civi::log()->debug('orgautocomplete_civicrm_permission_check', [
+    '$permission' => $permission,
+    '$granted' => $granted,
+    '$_REQUEST' => $_REQUEST,
+  ]);*/
+
+  //adjust permissions for entityRef field using custom perm
+  if ($permission == 'view all contacts') {
+    if (CRM_Utils_Request::retrieve('entity', 'String') == 'contact' &&
+      CRM_Utils_Request::retrieve('action', 'String') == 'getlist'
+    ) {
+      $json = json_decode(CRM_Utils_Request::retrieve('json', 'String'));
+      //Civi::log()->debug('orgautocomplete_civicrm_permission_check', ['$json' => $json]);
+
+      if (!empty($json->params->orgautocomplete)) {
+        $granted = TRUE;
+      }
+    }
+  }
+}
+
 
 function _orgautocomplete_getEmployerId($cid) {
   $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
