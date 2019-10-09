@@ -135,17 +135,17 @@ function orgautocomplete_civicrm_entityTypes(&$entityTypes) {
 }
 
 function orgautocomplete_civicrm_buildForm($formName, &$form) {
-  /*Civi::log()->debug('orgautocomplete_civicrm_buildForm', [
-    'formName' => $formName,
-    '_elementIndex' => $form->_elementIndex,
-    '_defaultValues' => $form->_defaultValues,
-    '_submitValues' => $form->_submitValues,
-    '_params' => $form->getVar('_params'),
-    //'$_REQUEST' => $_REQUEST,
-    //'form' => $form,
-  ]);*/
+  // Civi::log()->debug('orgautocomplete_civicrm_buildForm', [
+  //   'formName' => $formName,
+  //   '_elementIndex' => $form->_elementIndex,
+  //   '_defaultValues' => $form->_defaultValues,
+  //   '_submitValues' => $form->_submitValues,
+  //   '_params' => $form->getVar('_params'),
+  //   //'$_REQUEST' => $_REQUEST,
+  //   //'form' => $form,
+  // ]);
 
-  if ($formName == 'CRM_Event_Form_Registration_Register') {
+  if (in_array($formName, ['CRM_Event_Form_Registration_Register', 'CRM_Profile_Form_Edit'])) {
     $ele = !empty($form->_elementIndex['current_employer']) ? $form->_elementIndex['current_employer'] : '';
 
     if (!empty($ele)) {
@@ -235,45 +235,60 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
 }
 
 function orgautocomplete_civicrm_postProcess($formName, &$form) {
-  /*Civi::log()->debug('orgautocomplete_civicrm_postProcess', [
-    'formName' => $formName,
-    //'_elementIndex' => $form->_elementIndex,
-    //'_defaultValues' => $form->_defaultValues,
-    //'_submitValues' => $form->_submitValues,
-    '_params' => $form->getVar('_params'),
-    'form' => $form,
-  ]);*/
+  // Civi::log()->debug('orgautocomplete_civicrm_postProcess', [
+  //   'formName' => $formName,
+  //   '_elementIndex' => $form->_elementIndex,
+  //   '_defaultValues' => $form->_defaultValues,
+  //   '_submitValues' => $form->_submitValues,
+  //   '_params' => $form->getVar('_params'),
+  //   // 'form' => $form,
+  // ]);
 
   //process on confirmation or register when there is no fee
   if ($formName == 'CRM_Event_Form_Registration_Confirm' ||
+    $formName == 'CRM_Profile_Form_Edit' ||
     ($formName == 'CRM_Event_Form_Registration_Register' && empty($form->_values['event']['is_monetary']))
   ) {
-    $params = $form->getVar('_params');
 
-    if (!empty($params['org_select']) &&
-      (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
-      empty($params['current_employer'])
-    ) {
-      try {
+    if ($formName != 'CRM_Profile_Form_Edit') {
+      $params = $form->getVar('_params');
+      $contactId = $params['contact_id'];
+    } else {
+      $params = $form->_submitValues;
+      $contactId = CRM_Core_Session::singleton()->getLoggedInContactID();
+    }
+
+    try {
+
+      if (!empty($contactId)) {
+
         //get existing employer_id
-        $previousEmployerId = _orgautocomplete_getEmployerId($params['contact_id']);
+        $previousEmployerId = _orgautocomplete_getEmployerId($contactId);
 
-        CRM_Contact_BAO_Contact_Utils::createCurrentEmployerRelationship(
-          $params['contact_id'], $params['org_select'], $previousEmployerId);
+        if (!empty($params['org_select']) &&
+          (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
+          empty($params['current_employer'])
+        ) {
+            CRM_Contact_BAO_Contact_Utils::createCurrentEmployerRelationship(
+              $contactId, $params['org_select'], $previousEmployerId);
+        } else if (isset($params['org_select']) && empty($params['org_select'])) {
+          CRM_Contact_BAO_Contact_Utils::clearCurrentEmployer($contactId, $previousEmployerId);
+        }
       }
-      catch (CiviCRM_API3_Exception $e) {
-        Civi::log()->debug('CRM_Event_Form_Registration_Confirm postProcess', ['$e' => $e]);
-      }
+
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      Civi::log()->debug('CRM_Event_Form_Registration_Confirm postProcess', ['$e' => $e]);
     }
   }
 }
 
 function orgautocomplete_civicrm_permission_check($permission, &$granted) {
-  /*Civi::log()->debug('orgautocomplete_civicrm_permission_check', [
-    '$permission' => $permission,
-    '$granted' => $granted,
-    '$_REQUEST' => $_REQUEST,
-  ]);*/
+  // Civi::log()->debug('orgautocomplete_civicrm_permission_check', [
+  //   '$permission' => $permission,
+  //   '$granted' => $granted,
+  //   '$_REQUEST' => $_REQUEST,
+  // ]);
 
   //adjust permissions for entityRef field using custom perm
   if ($permission == 'view all contacts') {
