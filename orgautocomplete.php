@@ -211,20 +211,25 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
           'id' => $params['org_select'],
           'return' => 'display_name',
         ]);
-        //Civi::log()->debug('', ['$orgName' => $orgName]);
+        // Civi::log()->debug('', ['$orgName' => $orgName]);
 
         if (!empty($orgName)) {
           //get the label for the field so we can set as key
           $fieldLabel = $form->_fields['current_employer']['title'];
-          //Civi::log()->debug('', ['$fieldLabel' => $fieldLabel]);
+          // Civi::log()->debug('', ['$fieldLabel' => $fieldLabel]);
 
           //cycle through pre/post in tplVars and assign value
-          foreach (['CustomPre', 'CustomPost'] as $profile) {
-            if (isset($tplVars['primaryParticipantProfile'][$profile][$fieldLabel])) {
-              $tplVars['primaryParticipantProfile'][$profile][$fieldLabel] = $orgName;
+          if (isset($tplVars['primaryParticipantProfile']['CustomPre'][$fieldLabel])) {
+            $tplVars['primaryParticipantProfile']['CustomPre'][$fieldLabel] = $orgName;
+            $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
+          }
+          foreach ($tplVars['primaryParticipantProfile']['CustomPost'] as $profileId => $profile) {
+            if (isset($tplVars['primaryParticipantProfile']['CustomPost'][$profileId][$fieldLabel])) {
+              $tplVars['primaryParticipantProfile']['CustomPost'][$profileId][$fieldLabel] = $orgName;
               $form->assign('primaryParticipantProfile', $tplVars['primaryParticipantProfile']);
             }
           }
+
         }
       }
       catch (CRM_API3_Exception $e) {}
