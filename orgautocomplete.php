@@ -297,7 +297,9 @@ function orgautocomplete_civicrm_permission_check($permission, &$granted) {
 
   //adjust permissions for entityRef field using custom perm
   if ($permission == 'view all contacts') {
-    if (CRM_Utils_Request::retrieve('entity', 'String') == 'contact' &&
+    if ((CRM_Utils_Request::retrieve('entity', 'String') == 'Contact' ||
+        CRM_Utils_Request::retrieve('entity', 'String') == 'contact'
+      ) &&
       CRM_Utils_Request::retrieve('action', 'String') == 'getlist'
     ) {
       $json = json_decode(CRM_Utils_Request::retrieve('json', 'String'));
