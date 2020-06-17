@@ -294,7 +294,11 @@ function orgautocomplete_civicrm_permission_check($permission, &$granted) {
 
 
 function _orgautocomplete_getEmployerId($cid) {
-  $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
+  $employerId = NULL;
+
+  if ($cid) {
+    $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
+  }
 
   return $employerId;
 }
