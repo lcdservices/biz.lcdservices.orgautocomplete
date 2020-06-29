@@ -252,7 +252,8 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
 
     if (!empty($params['org_select']) &&
       (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
-      empty($params['current_employer'])
+      empty($params['current_employer']) &&
+      !empty($params['contact_id'])
     ) {
       try {
         //get existing employer_id
