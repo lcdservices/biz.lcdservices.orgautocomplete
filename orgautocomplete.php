@@ -272,7 +272,8 @@ function orgautocomplete_civicrm_postProcess($formName, &$form) {
 
         if (!empty($params['org_select']) &&
           (ctype_digit($params['org_select']) || is_int($params['org_select'])) &&
-          empty($params['current_employer'])
+          empty($params['current_employer']) &&
+          !empty($params['contact_id'])
         ) {
             CRM_Contact_BAO_Contact_Utils::createCurrentEmployerRelationship(
               $contactId, $params['org_select'], $previousEmployerId);
@@ -314,7 +315,11 @@ function orgautocomplete_civicrm_permission_check($permission, &$granted) {
 
 
 function _orgautocomplete_getEmployerId($cid) {
-  $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
+  $employerId = NULL;
+
+  if ($cid) {
+    $employerId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $cid, 'employer_id');
+  }
 
   return $employerId;
 }
