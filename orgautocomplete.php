@@ -151,30 +151,30 @@ function orgautocomplete_civicrm_buildForm($formName, &$form) {
     if (!empty($ele)) {
       $groupId = Civi::settings()->get('Orgautocomplete_restrict_group');
 
-      $form->addEntityRef('org_select', ts('Organization Name'), array(
+      $form->addEntityRef('org_select', ts('Organization Name'), [
         'entity' => 'contact',
         'placeholder' => ts('- Select Organization -'),
-        'select' => array('minimumInputLength' => 2),
+        'select' => ['minimumInputLength' => 2],
         'filters' => [],
         'orgautocomplete' => TRUE,
         'check_permissions' => FALSE,
-        'api' => array(
-          'params' => array(
+        'api' => [
+          'params' => [
             'contact_type' => 'Organization',
             'group' => $groupId,
             'check_permissions' => FALSE,
             'orgautocomplete' => TRUE,
-          ),
-        ),
-      ));
+          ],
+        ],
+      ]);
 
       $form->add('link', 'org_switcher', ' ', 'javascript:void(0);',
         '', 'Add New Organization', '#'
       );
 
-      CRM_Core_Region::instance('page-body')->add(array(
+      CRM_Core_Region::instance('page-body')->add([
         'template' => "CRM/orgautocomplete.tpl"
-      ));
+      ]);
 
       CRM_Core_Resources::singleton()->addScriptFile(E::LONG_NAME, 'js/OrgAutoComplete.js');
       CRM_Core_Resources::singleton()->addStyleFile(E::LONG_NAME, 'css/OrgAutoComplete.css');

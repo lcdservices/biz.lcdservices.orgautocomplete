@@ -37,9 +37,8 @@
  */
 
 
-return array(
-
-  'Orgautocomplete_restrict_group' => array(
+return [
+  'Orgautocomplete_restrict_group' => [
     'group_name' => 'Orgautocomplete_restrict_group',
     'name' => 'Orgautocomplete_restrict_group',
     'type' => 'Boolean',
@@ -51,9 +50,8 @@ return array(
     'is_domain' => 1,
     'is_contact' => 0,
     'description' => ts('If enabled, CiviCRM will restrict the org selection'),
-  ),
-
-);
+  ],
+];
 
 
 
